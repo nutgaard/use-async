@@ -1,15 +1,33 @@
 import { DependencyList, useCallback, useEffect, useState } from 'react';
 
-type AsyncData<TYPE> = {
-  isPending: boolean;
-  isRejected: boolean;
-  isResolved: boolean;
-  data?: TYPE;
-};
+export enum Status {
+  INIT = 'INIT',
+  PENDING = 'PENDING',
+  OK = 'OK',
+  ERROR = 'ERROR',
+  RELOADING = 'RELOADING'
+}
+
+export type WithoutData = { status: Status.INIT | Status.PENDING };
+export type WithData<TYPE> = { status: Status.OK | Status.RELOADING; data: TYPE };
+export type WithError = { status: Status.ERROR; error: any };
+type AsyncData<TYPE> = WithoutData | WithData<TYPE> | WithError;
 
 export type AsyncResult<TYPE> = AsyncData<TYPE> & {
   rerun(): void;
 };
+
+export function isPending(result: AsyncData<any>): result is WithoutData {
+  return [Status.INIT, Status.PENDING].includes(result.status);
+}
+
+export function hasData<TYPE>(result: AsyncData<TYPE>): result is WithData<TYPE> {
+  return [Status.OK, Status.RELOADING].includes(result.status);
+}
+
+export function hasError(result: AsyncData<any>): result is WithError {
+  return result.status === Status.ERROR;
+}
 
 export default function useAsync<TYPE>(
   source: () => Promise<TYPE>,
@@ -18,10 +36,7 @@ export default function useAsync<TYPE>(
 ): AsyncResult<TYPE> {
   const [forceRerun, setForceRerun] = useState(0);
   const [state, setState] = useState<AsyncData<TYPE>>({
-    isPending: !lazy,
-    isRejected: false,
-    isResolved: false,
-    data: undefined
+    status: lazy ? Status.INIT : Status.PENDING
   });
 
   useEffect(
@@ -29,18 +44,22 @@ export default function useAsync<TYPE>(
       let didCancel = false;
 
       if (!lazy) {
-        setState({ ...state, isPending: true });
+        if (state.status === Status.OK) {
+          setState({ status: Status.RELOADING, data: state.data });
+        } else {
+          setState({ status: Status.PENDING });
+        }
 
         source().then(
-          json => {
+          data => {
             if (!didCancel) {
-              setState({ isRejected: false, isPending: false, data: json, isResolved: true });
+              setState({ status: Status.OK, data });
             }
           },
           error => {
             console.error(error);
             if (!didCancel) {
-              setState({ isRejected: true, isPending: false, data: undefined, isResolved: false });
+              setState({ status: Status.ERROR, error });
             }
           }
         );

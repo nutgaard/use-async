@@ -1,5 +1,5 @@
-import { renderHook } from '@testing-library/react-hooks';
-import useAsync from '../src/use-async';
+import { act, renderHook } from '@testing-library/react-hooks';
+import useAsync, { hasData, hasError, isPending, Status } from '../src/use-async';
 
 describe('use-async', () => {
   const successSource = () => Promise.resolve('data');
@@ -9,20 +9,14 @@ describe('use-async', () => {
     const renderer = renderHook(() => useAsync(successSource));
     const result = renderer.result.current;
 
-    expect(result.isPending).toBe(true);
-    expect(result.isRejected).toBe(false);
-    expect(result.isResolved).toBe(false);
-    expect(result.data).toBeUndefined();
+    expect(result.status).toBe(Status.PENDING);
   });
 
   it('initialState lazy', () => {
     const renderer = renderHook(() => useAsync(successSource, true));
     const result = renderer.result.current;
 
-    expect(result.isPending).toBe(false);
-    expect(result.isRejected).toBe(false);
-    expect(result.isResolved).toBe(false);
-    expect(result.data).toBeUndefined();
+    expect(result.status).toBe(Status.INIT);
   });
 
   it('reports success', done => {
@@ -30,10 +24,11 @@ describe('use-async', () => {
 
     setTimeout(() => {
       const result = renderer.result.current;
-      expect(result.isPending).toBe(false);
-      expect(result.isRejected).toBe(false);
-      expect(result.isResolved).toBe(true);
-      expect(result.data).toBe('data');
+      expect(result.status).toBe(Status.OK);
+
+      if (result.status === Status.OK) {
+        expect(result.data).toBe('data');
+      }
       done();
     }, 50);
   });
@@ -43,10 +38,22 @@ describe('use-async', () => {
 
     setTimeout(() => {
       const result = renderer.result.current;
-      expect(result.isPending).toBe(false);
-      expect(result.isRejected).toBe(true);
-      expect(result.isResolved).toBe(false);
-      expect(result.data).toBeUndefined();
+      expect(result.status).toBe(Status.ERROR);
+
+      if (result.status === Status.ERROR) {
+        expect(result.error).toBe('error');
+      }
+      done();
+    }, 50);
+  });
+
+  it('reports reloading', done => {
+    const renderer = renderHook(() => useAsync(successSource));
+
+    setTimeout(() => {
+      const result = renderer.result.current;
+      act(() => result.rerun());
+      expect(renderer.result.current.status).toBe(Status.RELOADING);
       done();
     }, 50);
   });
@@ -57,10 +64,7 @@ describe('use-async', () => {
 
     setTimeout(() => {
       const result = renderer.result.current;
-      expect(result.isPending).toBe(true);
-      expect(result.isRejected).toBe(false);
-      expect(result.isResolved).toBe(false);
-      expect(result.data).toBeUndefined();
+      expect(result.status).toBe(Status.PENDING);
       done();
     }, 50);
   });
@@ -71,10 +75,7 @@ describe('use-async', () => {
 
     setTimeout(() => {
       const result = renderer.result.current;
-      expect(result.isPending).toBe(true);
-      expect(result.isRejected).toBe(false);
-      expect(result.isResolved).toBe(false);
-      expect(result.data).toBeUndefined();
+      expect(result.status).toBe(Status.PENDING);
       done();
     }, 50);
   });
@@ -84,11 +85,36 @@ describe('use-async', () => {
 
     setTimeout(() => {
       const result = renderer.result.current;
-      expect(result.isPending).toBe(false);
-      expect(result.isRejected).toBe(false);
-      expect(result.isResolved).toBe(true);
-      expect(result.data).toBe('data');
+
+      expect(result.status).toBe(Status.OK);
+      if (result.status === Status.OK) {
+        expect(result.data).toBe('data');
+      }
       done();
     }, 50);
+  });
+
+  it('is pending for INIT and PENDING state', () => {
+    expect(isPending({ status: Status.INIT })).toBe(true);
+    expect(isPending({ status: Status.PENDING })).toBe(true);
+    expect(isPending({ status: Status.OK, data: '' })).toBe(false);
+    expect(isPending({ status: Status.RELOADING, data: '' })).toBe(false);
+    expect(isPending({ status: Status.ERROR, error: '' })).toBe(false);
+  });
+
+  it('is has data for OK and RELOADING state', () => {
+    expect(hasData({ status: Status.INIT })).toBe(false);
+    expect(hasData({ status: Status.PENDING })).toBe(false);
+    expect(hasData({ status: Status.OK, data: '' })).toBe(true);
+    expect(hasData({ status: Status.RELOADING, data: '' })).toBe(true);
+    expect(hasData({ status: Status.ERROR, error: '' })).toBe(false);
+  });
+
+  it('is has error for ERROR state', () => {
+    expect(hasError({ status: Status.INIT })).toBe(false);
+    expect(hasError({ status: Status.PENDING })).toBe(false);
+    expect(hasError({ status: Status.OK, data: '' })).toBe(false);
+    expect(hasError({ status: Status.RELOADING, data: '' })).toBe(false);
+    expect(hasError({ status: Status.ERROR, error: '' })).toBe(true);
   });
 });
