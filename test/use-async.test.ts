@@ -48,14 +48,19 @@ describe('use-async', () => {
   });
 
   it('reports reloading', done => {
-    const renderer = renderHook(() => useAsync(successSource));
+    const spySource = jest.fn().mockReturnValue(successSource());
+    const renderer = renderHook(() => useAsync(spySource));
 
     setTimeout(() => {
       const result = renderer.result.current;
       act(() => result.rerun());
       expect(renderer.result.current.status).toBe(Status.RELOADING);
-      done();
     }, 50);
+
+    setTimeout(() => {
+      expect(spySource).toBeCalledTimes(2);
+      done();
+    }, 100);
   });
 
   it('unmount should prevent state update', done => {

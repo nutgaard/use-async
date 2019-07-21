@@ -74,7 +74,7 @@ export default function useAsync<TYPE>(
     dependencyList ? [...dependencyList, forceRerun, lazy] : [source, forceRerun, lazy]
   );
 
-  const rerun = useCallback(() => setForceRerun(forceRerun + 1), [forceRerun]);
+  const rerun = useCallback(() => setForceRerun(forceRerun + 1), [setForceRerun, forceRerun]);
 
   return { ...state, rerun };
 }
