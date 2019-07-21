@@ -84,7 +84,8 @@
   },
   "prettier": {
     "semi": true,
-    "singleQuote": true
+    "singleQuote": true,
+    "arrowParens": "always"
   },
   "commitlint": {
     "extends": [
