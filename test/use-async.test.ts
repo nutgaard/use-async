@@ -19,7 +19,7 @@ describe('use-async', () => {
     expect(result.status).toBe(Status.INIT);
   });
 
-  it('reports success', done => {
+  it('reports success', (done) => {
     const renderer = renderHook(() => useAsync(successSource));
 
     setTimeout(() => {
@@ -33,7 +33,7 @@ describe('use-async', () => {
     }, 50);
   });
 
-  it('reports failure', done => {
+  it('reports failure', (done) => {
     const renderer = renderHook(() => useAsync(failureSource));
 
     setTimeout(() => {
@@ -47,7 +47,7 @@ describe('use-async', () => {
     }, 50);
   });
 
-  it('reports reloading', done => {
+  it('reports reloading', (done) => {
     const spySource = jest.fn().mockReturnValue(successSource());
     const renderer = renderHook(() => useAsync(spySource));
 
@@ -59,11 +59,24 @@ describe('use-async', () => {
 
     setTimeout(() => {
       expect(spySource).toBeCalledTimes(2);
+      expect(spySource.mock.calls).toEqual([[false], [true]]);
       done();
     }, 100);
   });
 
-  it('unmount should prevent state update', done => {
+  it('rerendering should not call source', (done) => {
+    const spySource = jest.fn().mockReturnValue(successSource());
+    const renderer = renderHook(() => useAsync(spySource));
+
+    act(() => renderer.rerender());
+
+    setTimeout(() => {
+      expect(spySource).toBeCalledTimes(1);
+      done();
+    }, 50);
+  });
+
+  it('unmount should prevent state update', (done) => {
     const renderer = renderHook(() => useAsync(successSource));
     renderer.unmount();
 
@@ -74,7 +87,7 @@ describe('use-async', () => {
     }, 50);
   });
 
-  it('unmount should prevent state update', done => {
+  it('unmount should prevent state update', (done) => {
     const renderer = renderHook(() => useAsync(failureSource));
     renderer.unmount();
 
@@ -85,7 +98,7 @@ describe('use-async', () => {
     }, 50);
   });
 
-  it('use provided dependencyList', done => {
+  it('use provided dependencyList', (done) => {
     const renderer = renderHook(() => useAsync(successSource, false, [1]));
 
     setTimeout(() => {

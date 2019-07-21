@@ -1,4 +1,4 @@
-import { DependencyList, useCallback, useEffect, useState } from 'react';
+import { DependencyList, useCallback, useEffect, useRef, useState } from 'react';
 
 export enum Status {
   INIT = 'INIT',
@@ -30,17 +30,21 @@ export function hasError(result: AsyncData<any>): result is WithError {
 }
 
 export default function useAsync<TYPE>(
-  source: () => Promise<TYPE>,
+  source: (isRerun: boolean) => Promise<TYPE>,
   lazy: boolean = false,
   dependencyList?: DependencyList
 ): AsyncResult<TYPE> {
   const [forceRerun, setForceRerun] = useState(0);
+  const lastRerun = useRef(forceRerun);
   const [state, setState] = useState<AsyncData<TYPE>>({
     status: lazy ? Status.INIT : Status.PENDING
   });
 
   useEffect(
     () => {
+      const isRerun = lastRerun.current !== forceRerun;
+      lastRerun.current = forceRerun;
+
       let didCancel = false;
 
       if (!lazy) {
@@ -50,13 +54,13 @@ export default function useAsync<TYPE>(
           setState({ status: Status.PENDING });
         }
 
-        source().then(
-          data => {
+        source(isRerun).then(
+          (data) => {
             if (!didCancel) {
               setState({ status: Status.OK, data });
             }
           },
-          error => {
+          (error) => {
             console.error(error);
             if (!didCancel) {
               setState({ status: Status.ERROR, error });

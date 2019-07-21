@@ -18,7 +18,7 @@ The library exposes one hook `useAsync`, and three utility-functions to help use
 import React from 'react';
 import useAsync, { isPending, hasError } from '@nutgaard/use-async';
 
-const source = React.useCallback(() => Promise.resolve("your data here"), []);
+const source = React.useCallback((isRerun) => Promise.resolve("your data here"), []);
 const result = useAsync(source);
 
 if (isPending(result)) {
@@ -34,7 +34,7 @@ return <pre>{result.data}</pre>
 
 | Argument  | Type | Optional | Default |
 | ------------- | ------------- | ------------- | ------------- |
-| `source`  | `() => Promise<DATA>` | No | - |
+| `source`  | `(isRerun) => Promise<DATA>` | No | - |
 | `lazy`  | `boolean`  | Yes | `false` |
 | `dependencyList`  | `Array<any>`  | Yes | `undefiend` |
 
