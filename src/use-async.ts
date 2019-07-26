@@ -47,7 +47,7 @@ export default function useAsync<TYPE>(
 
       let didCancel = false;
 
-      if (!lazy) {
+      if (!lazy || isRerun) {
         if (state.status === Status.OK) {
           setState({ status: Status.RELOADING, data: state.data });
         } else {

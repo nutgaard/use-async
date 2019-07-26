@@ -64,6 +64,23 @@ describe('use-async', () => {
     }, 100);
   });
 
+  it('run on rerun even if lazy', (done) => {
+    const spySource = jest.fn().mockReturnValue(successSource());
+    const renderer = renderHook(() => useAsync(spySource, true));
+
+    setTimeout(() => {
+      const result = renderer.result.current;
+      act(() => result.rerun());
+      expect(renderer.result.current.status).toBe(Status.RELOADING);
+    }, 50);
+
+    setTimeout(() => {
+      expect(spySource).toBeCalledTimes(1);
+      expect(spySource.mock.calls).toEqual([[false], [true]]);
+      done();
+    }, 100);
+  });
+
   it('rerendering should not call source', (done) => {
     const spySource = jest.fn().mockReturnValue(successSource());
     const renderer = renderHook(() => useAsync(spySource));
