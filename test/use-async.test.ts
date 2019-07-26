@@ -71,12 +71,12 @@ describe('use-async', () => {
     setTimeout(() => {
       const result = renderer.result.current;
       act(() => result.rerun());
-      expect(renderer.result.current.status).toBe(Status.RELOADING);
+      expect(renderer.result.current.status).toBe(Status.PENDING);
     }, 50);
 
     setTimeout(() => {
       expect(spySource).toBeCalledTimes(1);
-      expect(spySource.mock.calls).toEqual([[false], [true]]);
+      expect(spySource.mock.calls).toEqual([[true]]);
       done();
     }, 100);
   });
