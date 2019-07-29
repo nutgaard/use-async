@@ -29,22 +29,31 @@ export function hasError(result: AsyncData<any>): result is WithError {
   return result.status === Status.ERROR;
 }
 
+const rnd = () => ('' + Math.random()).slice(2);
+type ForceHook = [string, () => void];
+function useForce(): ForceHook {
+  const [state, setState] = useState<string>(rnd());
+  const force = useCallback(() => setState(rnd()), [setState]);
+
+  return useMemo(() => [state, force], [state, force]);
+}
+
 export default function useAsync<TYPE>(
   source: (isRerun: boolean) => Promise<TYPE>,
   lazy: boolean = false,
   dependencyList?: DependencyList
 ): AsyncResult<TYPE> {
   const isCancelled = useRef(false);
-  const [forceRerun, setForceRerun] = useState(0);
-  const lastRerun = useRef(forceRerun);
+  const [rerunValue, rerun] = useForce();
+  const lastRerun = useRef(rerunValue);
   const [state, setState] = useState<AsyncData<TYPE>>({
     status: lazy ? Status.INIT : Status.PENDING
   });
 
   useEffect(
     () => {
-      const isRerun = lastRerun.current !== forceRerun;
-      lastRerun.current = forceRerun;
+      const isRerun = lastRerun.current !== rerunValue;
+      lastRerun.current = rerunValue;
 
       if (!lazy || (isRerun && ![Status.PENDING, Status.RELOADING].includes(state.status))) {
         if (state.status === Status.OK) {
@@ -71,8 +80,8 @@ export default function useAsync<TYPE>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     dependencyList
-      ? [...dependencyList, forceRerun, lazy, isCancelled]
-      : [source, forceRerun, lazy, isCancelled]
+      ? [...dependencyList, rerunValue, lazy, isCancelled]
+      : [source, rerunValue, lazy, isCancelled]
   );
 
   useEffect(() => {
@@ -81,7 +90,5 @@ export default function useAsync<TYPE>(
     };
   }, [isCancelled]);
 
-  const rerun = useCallback(() => setForceRerun(forceRerun + 1), [setForceRerun, forceRerun]);
-
-  return { ...state, rerun };
+  return useMemo(() => ({ ...state, rerun }), [state, rerun]);
 }
