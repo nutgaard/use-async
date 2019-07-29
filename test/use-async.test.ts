@@ -60,6 +60,7 @@ describe('use-async', () => {
     setTimeout(() => {
       expect(spySource).toBeCalledTimes(2);
       expect(spySource.mock.calls).toEqual([[false], [true]]);
+      expect(renderer.result.current.status).toBe(Status.OK);
       done();
     }, 100);
   });
@@ -77,6 +78,7 @@ describe('use-async', () => {
     setTimeout(() => {
       expect(spySource).toBeCalledTimes(1);
       expect(spySource.mock.calls).toEqual([[true]]);
+      expect(renderer.result.current.status).toBe(Status.OK);
       done();
     }, 100);
   });
