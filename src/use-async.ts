@@ -1,4 +1,4 @@
-import { DependencyList, useCallback, useEffect, useRef, useState } from 'react';
+import { DependencyList, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export enum Status {
   INIT = 'INIT',
@@ -34,6 +34,7 @@ export default function useAsync<TYPE>(
   lazy: boolean = false,
   dependencyList?: DependencyList
 ): AsyncResult<TYPE> {
+  const isCancelled = useRef(false);
   const [forceRerun, setForceRerun] = useState(0);
   const lastRerun = useRef(forceRerun);
   const [state, setState] = useState<AsyncData<TYPE>>({
@@ -45,8 +46,6 @@ export default function useAsync<TYPE>(
       const isRerun = lastRerun.current !== forceRerun;
       lastRerun.current = forceRerun;
 
-      let didCancel = false;
-
       if (!lazy || isRerun) {
         if (state.status === Status.OK) {
           setState({ status: Status.RELOADING, data: state.data });
@@ -56,27 +55,31 @@ export default function useAsync<TYPE>(
 
         source(isRerun).then(
           (data) => {
-            if (!didCancel) {
+            if (!isCancelled.current) {
               setState({ status: Status.OK, data });
             }
           },
           (error) => {
             console.error(error);
-            if (!didCancel) {
+            if (!isCancelled.current) {
               setState({ status: Status.ERROR, error });
             }
           }
         );
       }
-
-      return () => {
-        didCancel = true;
-      };
       // Alle skal være med, men eslint greier ikke å analysere den
       // eslint-disable-next-line react-hooks/exhaustive-deps
     },
-    dependencyList ? [...dependencyList, forceRerun, lazy] : [source, forceRerun, lazy]
+    dependencyList
+      ? [...dependencyList, forceRerun, lazy, isCancelled]
+      : [source, forceRerun, lazy, isCancelled]
   );
+
+  useEffect(() => {
+    return () => {
+      isCancelled.current = true;
+    };
+  }, [isCancelled]);
 
   const rerun = useCallback(() => setForceRerun(forceRerun + 1), [setForceRerun, forceRerun]);
 
