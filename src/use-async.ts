@@ -29,22 +29,13 @@ export function hasError(result: AsyncData<any>): result is WithError {
   return result.status === Status.ERROR;
 }
 
-const rnd = () => ('' + Math.random()).slice(2);
-type ForceHook = [string, () => void];
-function useForce(): ForceHook {
-  const [state, setState] = useState<string>(rnd());
-  const force = useCallback(() => setState(rnd()), [setState]);
-
-  return useMemo(() => [state, force], [state, force]);
-}
-
 export default function useAsync<TYPE>(
   source: (isRerun: boolean) => Promise<TYPE>,
   lazy: boolean = false,
   dependencyList?: DependencyList
 ): AsyncResult<TYPE> {
   const isCancelled = useRef(false);
-  const [rerunValue, rerun] = useForce();
+  const [rerunValue, setRerunValue] = useState(0);
   const lastRerun = useRef(rerunValue);
   const [state, setState] = useState<AsyncData<TYPE>>({
     status: lazy ? Status.INIT : Status.PENDING
@@ -89,6 +80,10 @@ export default function useAsync<TYPE>(
       isCancelled.current = true;
     };
   }, [isCancelled]);
+
+  const rerun = useCallback(() => {
+    setRerunValue((v) => v + 1);
+  }, []);
 
   return useMemo(() => ({ ...state, rerun }), [state, rerun]);
 }
