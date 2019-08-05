@@ -32,14 +32,17 @@ export function hasError(result: AsyncData<any>): result is WithError {
 export default function useAsync<TYPE>(
   source: (isRerun: boolean) => Promise<TYPE>,
   lazy: boolean = false,
-  dependencyList?: DependencyList
+  dependencyList?: DependencyList,
+  initialState?: AsyncData<TYPE>
 ): AsyncResult<TYPE> {
   const isCancelled = useRef(false);
   const [rerunValue, setRerunValue] = useState(0);
   const lastRerun = useRef(rerunValue);
-  const [state, setState] = useState<AsyncData<TYPE>>({
-    status: lazy ? Status.INIT : Status.PENDING
-  });
+  const [state, setState] = useState<AsyncData<TYPE>>(
+    initialState || {
+      status: lazy ? Status.INIT : Status.PENDING
+    }
+  );
 
   useEffect(
     () => {

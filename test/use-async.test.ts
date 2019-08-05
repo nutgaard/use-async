@@ -131,6 +131,13 @@ describe('use-async', () => {
     }, 50);
   });
 
+  it('accepts initialState argument to prepopulate from cache', () => {
+    const renderer = renderHook(() =>
+      useAsync(successSource, false, [], { status: Status.OK, data: 'data' })
+    );
+    expect(renderer.result.current.status).toBe(Status.RELOADING);
+  });
+
   it('is pending for INIT and PENDING state', () => {
     expect(isPending({ status: Status.INIT })).toBe(true);
     expect(isPending({ status: Status.PENDING })).toBe(true);
