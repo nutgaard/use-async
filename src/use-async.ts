@@ -11,7 +11,7 @@ export enum Status {
 export type WithoutData = { status: Status.INIT | Status.PENDING };
 export type WithData<TYPE> = { status: Status.OK | Status.RELOADING; data: TYPE };
 export type WithError = { status: Status.ERROR; error: any };
-type AsyncData<TYPE> = WithoutData | WithData<TYPE> | WithError;
+export type AsyncData<TYPE> = WithoutData | WithData<TYPE> | WithError;
 
 export type AsyncResult<TYPE> = AsyncData<TYPE> & {
   rerun(): void;
