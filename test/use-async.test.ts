@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react-hooks';
-import useAsync, { hasData, hasError, isPending, Status } from '../src/use-async';
+import useAsync, { hasData, hasError, isLoading, isPending, Status } from '../src/use-async';
 
 describe('use-async', () => {
   const successSource = () => Promise.resolve('data');
@@ -144,6 +144,22 @@ describe('use-async', () => {
     expect(isPending({ status: Status.OK, data: '' })).toBe(false);
     expect(isPending({ status: Status.RELOADING, data: '' })).toBe(false);
     expect(isPending({ status: Status.ERROR, error: '' })).toBe(false);
+  });
+
+  it('is pending for INIT and PENDING state given inclusion of reloading', () => {
+    expect(isPending({ status: Status.INIT }, true)).toBe(true);
+    expect(isPending({ status: Status.PENDING }, true)).toBe(true);
+    expect(isPending({ status: Status.OK, data: '' }, true)).toBe(false);
+    expect(isPending({ status: Status.RELOADING, data: '' }, true)).toBe(true);
+    expect(isPending({ status: Status.ERROR, error: '' }, true)).toBe(false);
+  });
+
+  it('is loading for INIT, PENDING and RELOADING state', () => {
+    expect(isLoading({ status: Status.INIT })).toBe(true);
+    expect(isLoading({ status: Status.PENDING })).toBe(true);
+    expect(isLoading({ status: Status.OK, data: '' })).toBe(false);
+    expect(isLoading({ status: Status.RELOADING, data: '' })).toBe(true);
+    expect(isLoading({ status: Status.ERROR, error: '' })).toBe(false);
   });
 
   it('is has data for OK and RELOADING state', () => {
