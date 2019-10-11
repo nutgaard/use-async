@@ -17,7 +17,18 @@ export type AsyncResult<TYPE> = AsyncData<TYPE> & {
   rerun(): void;
 };
 
-export function isPending(result: AsyncData<any>): result is WithoutData {
+export function isLoading(result: AsyncData<any>): boolean {
+  return [Status.INIT, Status.PENDING, Status.RELOADING].includes(result.status);
+}
+
+export function isPending(
+  result: AsyncData<any>,
+  includeReloading: boolean = false
+): result is WithoutData {
+  if (includeReloading) {
+    return isLoading(result);
+  }
+
   return [Status.INIT, Status.PENDING].includes(result.status);
 }
 
