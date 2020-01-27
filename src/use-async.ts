@@ -61,7 +61,7 @@ export default function useAsync<TYPE>(
       lastRerun.current = rerunValue;
 
       if (!lazy || (isRerun && ![Status.PENDING, Status.RELOADING].includes(state.status))) {
-        if (state.status === Status.OK) {
+        if (state.status === Status.OK || state.status === Status.RELOADING) {
           setState({ status: Status.RELOADING, data: state.data });
         } else {
           setState({ status: Status.PENDING });
